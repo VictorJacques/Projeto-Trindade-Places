@@ -1,0 +1,14 @@
+{
+  "name": "projeto-trindade-places",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Victor J",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
