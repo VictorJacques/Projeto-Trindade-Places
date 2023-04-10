@@ -23,11 +23,13 @@ const Place = connection.define("Place", {
     type: Sequelize.STRING,
   },
   latitude: {
-    type: Sequelize.INTEGER,
+    type: Sequelize.FLOAT,
     allowNull: false,
   },
   longitude: {
-    type: Sequelize.INTEGER,
+    type: Sequelize.FLOAT,
     allowNull: false,
   },
 });
+
+module.exports = Place;
