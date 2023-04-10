@@ -1,6 +1,7 @@
 const express = require("express");
 const connection = require("./src/database");
 const Place = require("./src/models/place");
+const { TableHints } = require("sequelize");
 const app = express();
 app.use(express.json());
 
@@ -71,6 +72,26 @@ app.delete("/places/:id", async (req, res) => {
       .status(500)
       .json({ message: "Não conseguimos processar sua solicitação." });
   }
+});
+
+app.put("/places/:id", async (req, res) => {
+  try {
+    const placeInDatabase = await Place.findByPk(req.params.id);
+    if (!placeInDatabase) {
+      return res.status(404).json({
+        message: "Não existe um lugar com esse ID!",
+      });
+    }
+
+    placeInDatabase.name = req.body.name;
+    placeInDatabase.tel = req.body.tel;
+    placeInDatabase.openingHours = req.body.openingHours;
+    placeInDatabase.description = req.body.description;
+
+    await placeInDatabase.save();
+
+    res.json(placeInDatabase);
+  } catch (error) {}
 });
 
 app.listen(3333, () => console.log("Server Online"));
