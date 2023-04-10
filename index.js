@@ -87,6 +87,8 @@ app.put("/places/:id", async (req, res) => {
     placeInDatabase.tel = req.body.tel;
     placeInDatabase.openingHours = req.body.openingHours;
     placeInDatabase.description = req.body.description;
+    placeInDatabase.latitude = req.body.latitude;
+    placeInDatabase.longitude = req.body.longitude;
 
     await placeInDatabase.save();
 
