@@ -1,12 +1,15 @@
 const express = require("express");
 const connection = require("./src/database");
+
 const Place = require("./src/models/place");
+const User = require("./src/models/user");
 const { TableHints } = require("sequelize");
+
 const app = express();
 app.use(express.json());
 
 connection.authenticate();
-connection.sync();
+connection.sync({ alter: true });
 
 app.get("/places", async (req, res) => {
   try {
@@ -94,6 +97,24 @@ app.put("/places/:id", async (req, res) => {
 
     res.json(placeInDatabase);
   } catch (error) {}
+});
+
+app.post("/users", async (req, res) => {
+  try {
+    const newUser = {
+      name: req.body.name,
+      email: req.body.email,
+      username: req.body.username,
+      password: req.body.password,
+    };
+
+    const user = await User.create(newUser);
+    res.status(201).json(user);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Não conseguimos processar sua solicitação." });
+  }
 });
 
 app.listen(3333, () => console.log("Server Online"));
