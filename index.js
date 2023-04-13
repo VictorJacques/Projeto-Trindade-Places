@@ -1,5 +1,7 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const connection = require("./src/database");
+const jwt = require("jsonwebtoken");
 
 const Place = require("./src/models/place");
 const User = require("./src/models/user");
@@ -101,15 +103,71 @@ app.put("/places/:id", async (req, res) => {
 
 app.post("/users", async (req, res) => {
   try {
+    const userInDatabase = await User.findOne({
+      where: {
+        username: req.body.username,
+      },
+    });
+    const userInDatabase2 = await User.findOne({
+      where: {
+        email: req.body.email,
+      },
+    });
+
+    if (userInDatabase || userInDatabase2) {
+      return res
+        .status(409)
+        .json({ message: "Já existe um usuário com essa conta." });
+    }
+
+    const hash = await bcrypt.hash(req.body.password, 10);
     const newUser = {
       name: req.body.name,
       email: req.body.email,
       username: req.body.username,
-      password: req.body.password,
+      password: hash,
     };
 
     const user = await User.create(newUser);
     res.status(201).json(user);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Não conseguimos processar sua solicitação." });
+  }
+});
+
+app.post("/users/login", async (req, res) => {
+  try {
+    const userInDatabase = await User.findOne({
+      where: {
+        email: req.body.email,
+      },
+    });
+    if (!userInDatabase) {
+      return res.status(404).json({ message: "Credenciais incorretas" });
+    }
+
+    const passwordIsValid = await bcrypt.compare(
+      req.body.password,
+      userInDatabase.password
+    );
+
+    if (!passwordIsValid) {
+      return res.status(404).json({ message: "Credenciais incorretaaaaas" });
+    }
+
+    const token = jwt.sign(
+      {
+        id: userInDatabase.id,
+      },
+      "minha_chave_secreta",
+      {
+        expiresIn: "1h",
+      }
+    );
+
+    res.json({ name: userInDatabase.username, token: token });
   } catch (error) {
     res
       .status(500)
