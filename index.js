@@ -1,21 +1,27 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const connection = require("./src/database");
 const jwt = require("jsonwebtoken");
+
+const connection = require("./src/database");
 
 const Place = require("./src/models/place");
 const User = require("./src/models/user");
 const { TableHints } = require("sequelize");
 
+const log = require("./src/middlewares/log");
+//const validateNewUser = require("./src/middlewares/");
+const validateToken = require("./src/middlewares/validate-token");
+
 const app = express();
 app.use(express.json());
+
+app.use(log);
 
 connection.authenticate();
 connection.sync({ alter: true });
 
-app.get("/places", async (req, res) => {
+app.get("/places", validateToken, async (req, res) => {
   try {
-    console.log("Get");
     const places = await Place.findAll();
     res.json(places);
   } catch (error) {
@@ -25,7 +31,7 @@ app.get("/places", async (req, res) => {
   }
 });
 
-app.post("/places", async (req, res) => {
+app.post("/places", validateToken, async (req, res) => {
   try {
     const lugar = {
       name: req.body.name,
@@ -59,7 +65,7 @@ app.post("/places", async (req, res) => {
   }
 });
 
-app.delete("/places/:id", async (req, res) => {
+app.delete("/places/:id", validateToken, async (req, res) => {
   try {
     const placeInDatabase = await Place.findOne({
       where: { id: req.params.id },
@@ -79,7 +85,7 @@ app.delete("/places/:id", async (req, res) => {
   }
 });
 
-app.put("/places/:id", async (req, res) => {
+app.put("/places/:id", validateToken, async (req, res) => {
   try {
     const placeInDatabase = await Place.findByPk(req.params.id);
     if (!placeInDatabase) {
@@ -101,41 +107,44 @@ app.put("/places/:id", async (req, res) => {
   } catch (error) {}
 });
 
-app.post("/users", async (req, res) => {
-  try {
-    const userInDatabase = await User.findOne({
-      where: {
-        username: req.body.username,
-      },
-    });
-    const userInDatabase2 = await User.findOne({
-      where: {
+app.post(
+  "/users",
+  /*validateNewUser,*/ async (req, res) => {
+    try {
+      const userInDatabase = await User.findOne({
+        where: {
+          username: req.body.username,
+        },
+      });
+      const userInDatabase2 = await User.findOne({
+        where: {
+          email: req.body.email,
+        },
+      });
+
+      if (userInDatabase || userInDatabase2) {
+        return res
+          .status(409)
+          .json({ message: "Já existe um usuário com essa conta." });
+      }
+
+      const hash = await bcrypt.hash(req.body.password, 10);
+      const newUser = {
+        name: req.body.name,
         email: req.body.email,
-      },
-    });
+        username: req.body.username,
+        password: hash,
+      };
 
-    if (userInDatabase || userInDatabase2) {
-      return res
-        .status(409)
-        .json({ message: "Já existe um usuário com essa conta." });
+      const user = await User.create(newUser);
+      res.status(201).json(user);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Não conseguimos processar sua solicitação." });
     }
-
-    const hash = await bcrypt.hash(req.body.password, 10);
-    const newUser = {
-      name: req.body.name,
-      email: req.body.email,
-      username: req.body.username,
-      password: hash,
-    };
-
-    const user = await User.create(newUser);
-    res.status(201).json(user);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Não conseguimos processar sua solicitação." });
   }
-});
+);
 
 app.post("/users/login", async (req, res) => {
   try {
