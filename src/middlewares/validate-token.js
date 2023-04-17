@@ -10,7 +10,7 @@ function validateToken(req, res, next) {
 
   const tokenJwt = token.slice(7);
 
-  jwt.verify(tokenJwt, "minha_chave_secreta", (error, tokenContent) => {
+  jwt.verify(tokenJwt, process.env.CHAVE_DO_TOKEN, (error, tokenContent) => {
     if (error) {
       if (error.name === "TokenExpiredError") {
         return res.status(403).json({ message: "Token Expirado" });
@@ -18,6 +18,7 @@ function validateToken(req, res, next) {
         return res.status(403).json({ message: "Token Inválido" });
       }
     } else {
+      req.body.userId = tokenContent.id;
       next();
     }
   });

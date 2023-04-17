@@ -1,5 +1,7 @@
 const { Sequelize } = require("sequelize");
 const connection = require("../database");
+const User = require("./user");
+
 const Place = connection.define("Place", {
   id: {
     type: Sequelize.INTEGER,
@@ -30,6 +32,11 @@ const Place = connection.define("Place", {
     type: Sequelize.FLOAT,
     allowNull: false,
   },
+  user_id: {
+    type: Sequelize.INTEGER,
+  },
 });
+
+Place.belongsTo(User);
 
 module.exports = Place;
